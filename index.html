@@ -24,7 +24,6 @@
     }
     textarea, input {
       width: 100%;
-      height: 500px;
       margin-bottom: 10px;
     }
     label {
@@ -36,13 +35,13 @@
   <div id="editor-container">
     <div class="controls">
       <h3>Level Data (.f2l)</h3>
-      <textarea id="levelData" placeholder="Enter level data here in .f2l format"></textarea>
+      <textarea id="levelData" placeholder="Enter level data here in .f2l format" height=500px></textarea>
 
       <label for="levelWidth">Level Width (px)</label>
-      <input type="number" id="levelWidth" value="2000" height=250px>
+      <input type="number" id="levelWidth" value="2000">
 
       <label for="levelHeight">Level Height (px)</label>
-      <input type="number" id="levelHeight" value="1500" height=250px>
+      <input type="number" id="levelHeight" value="1500">
 
       <button onclick="renderLevel()">Render Level</button>
     </div>
