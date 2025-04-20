@@ -1,117 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flow II Level Editor</title>
-    <style>
-        #editor-container {
-            display: flex;
-            justify-content: space-between;
-        }
-        #canvas-container {
-            overflow: auto;
-            width: 1280px;
-            height: 720px;
-            border: 1px solid black;
-        }
-        canvas {
-            background-color: #f4f4f4;
-        }
-        .controls {
-            width: 300px;
-            padding: 10px;
-        }
-        textarea {
-            width: 100%;
-            height: 150px;
-            margin-bottom: 10px;
-        }
-        button {
-            margin-top: 10px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Flow II Level Editor</title>
+  <style>
+    #editor-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    #canvas-container {
+      overflow: auto;
+      width: 1280px;
+      height: 720px;
+      border: 1px solid black;
+    }
+    canvas {
+      background-color: #f4f4f4;
+    }
+    .controls {
+      width: 300px;
+      padding: 10px;
+    }
+    textarea, input {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    label {
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-    <div id="editor-container">
-        <div class="controls">
-            <h3>Level Data (.f2l)</h3>
-            <textarea id="levelData" placeholder="Enter level data here in .f2l format"></textarea>
-            <button onclick="renderLevel()">Render Level</button>
-            <textarea id="widthbox" placeholder="width"></textarea>
-            <textarea id="heightbox" placeholder="height"></textarea>
-        </div>
-        <div id="canvas-container">
-            <canvas id="canvas" width=auto height=auto></canvas>
-        </div>
+  <div id="editor-container">
+    <div class="controls">
+      <h3>Level Data (.f2l)</h3>
+      <textarea id="levelData" placeholder="Enter level data here in .f2l format"></textarea>
+
+      <label for="levelWidth">Level Width (px)</label>
+      <input type="number" id="levelWidth" value="2000">
+
+      <label for="levelHeight">Level Height (px)</label>
+      <input type="number" id="levelHeight" value="1500">
+
+      <button onclick="renderLevel()">Render Level</button>
     </div>
+    <div id="canvas-container">
+      <canvas id="canvas" width="1280" height="720"></canvas>
+    </div>
+  </div>
 
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const levelDataTextbox = document.getElementById('levelData');
-        const levelwidth = document.getElementById('widthbox');
-        const levelheight = document.getElementById('heightbox');
-        const objectImages = {}; // Object ID to image mapping
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const levelDataTextbox = document.getElementById('levelData');
+    const levelWidthInput = document.getElementById('levelWidth');
+    const levelHeightInput = document.getElementById('levelHeight');
 
-        // Preload object images
-        for (let i = 1; i <= 11; i++) {
-            const img = new Image();
-            img.src = `${i}.png`; // Images should be named 1.png, 2.png, ..., 11.png
-            objectImages[i] = img;
+    const objectImages = {};
+    let levelWidth = 2000;
+    let levelHeight = 1500;
+    let objects = [];
+    let playerSpawn = { x: 0, y: 0 };
+
+    // Load object images 1-11
+    for (let i = 1; i <= 11; i++) {
+      const img = new Image();
+      img.src = `${i}.png`;
+      objectImages[i] = img;
+    }
+
+    // Load player sprite
+    const playerImage = new Image();
+    playerImage.src = 'player.png';
+
+    function renderLevel() {
+      levelWidth = parseInt(levelWidthInput.value);
+      levelHeight = parseInt(levelHeightInput.value);
+
+      canvas.width = levelWidth;
+      canvas.height = levelHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const data = levelDataTextbox.value;
+      const parts = data.split(',');
+      objects = [];
+
+      // Parse spawn position from first 6 fields
+      if (parts.length >= 6) {
+        playerSpawn.x = parseInt(parts[4]) || 0;
+        playerSpawn.y = parseInt(parts[5]) || 0;
+      }
+
+      // Parse objects
+      for (let i = 6; i + 2 < parts.length; i += 3) {
+        const objectID = parseInt(parts[i]);
+        const x = parseInt(parts[i + 1]);
+        const y = parseInt(parts[i + 2]);
+        if (!isNaN(objectID) && !isNaN(x) && !isNaN(y)) {
+          objects.push({ objectID, x, y });
         }
+      }
 
-        // Level data
-        let objects = [];
+      // Draw player spawn
+      if (playerImage.complete) {
+        ctx.drawImage(playerImage, playerSpawn.x, playerSpawn.y, 128, 128);
+      } else {
+        playerImage.onload = () => {
+          ctx.drawImage(playerImage, playerSpawn.x, playerSpawn.y, 128, 128);
+        };
+      }
 
-        // Render level based on .f2l input
-        function renderLevel() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            objects = parseLevelData(levelDataTextbox.value);
-
-            objects.forEach(obj => {
-                const img = objectImages[obj.objectID];
-                if (img) {
-                    ctx.drawImage(img, obj.x, obj.y, 128, 128);
-                }
-            });
+      // Draw all objects
+      objects.forEach(obj => {
+        const img = objectImages[obj.objectID];
+        if (img && img.complete) {
+          ctx.drawImage(img, obj.x, obj.y, 128, 128);
+        } else if (img) {
+          img.onload = () => {
+            ctx.drawImage(img, obj.x, obj.y, 128, 128);
+          };
         }
-
-        // Parse .f2l data to create objects
-        function parseLevelData(data) {
-            const objects = [];
-            const parts = data.split(','); // Split data by commas
-            
-            let index = 0;
-
-            // Parse general level info (version, name, description, etc.)
-            const version = parts[index++];
-            const name = parts[index++];
-            const description = parts[index++];
-            const creatorName = parts[index++];
-            const playerStartX = parseInt(parts[index++]);
-            const playerStartY = parseInt(parts[index++]);
-
-            // Parse objects
-            while (index < parts.length) {
-                const objectID = parseInt(parts[index++]);
-                const x = parseInt(parts[index++]);
-                const y = parseInt(parts[index++]);
-
-                objects.push({
-                    objectID,
-                    x,
-                    y
-                });
-            }
-
-            return objects;
-        }
-
-        // To allow scrolling: make sure the canvas is bigger than the screen
-        canvas.width = levelwidth;
-        canvas.height = levelheight;
-        
-    </script>
+      });
+    }
+  </script>
 </body>
 </html>
