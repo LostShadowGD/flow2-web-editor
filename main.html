@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow II Level Editor</title>
+    <style>
+        #editor-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        #canvas-container {
+            overflow: auto;
+            width: 1280px;
+            height: 720px;
+            border: 1px solid black;
+        }
+        canvas {
+            background-color: #f4f4f4;
+        }
+        .controls {
+            width: 300px;
+            padding: 10px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+        }
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="editor-container">
+        <div class="controls">
+            <h3>Level Data (.f2l)</h3>
+            <textarea id="levelData" placeholder="Enter level data here in .f2l format"></textarea>
+            <button onclick="renderLevel()">Render Level</button>
+        </div>
+        <div id="canvas-container">
+            <canvas id="canvas" width="1280" height="720"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const levelDataTextbox = document.getElementById('levelData');
+        const objectImages = {}; // Object ID to image mapping
+
+        // Preload object images
+        for (let i = 1; i <= 11; i++) {
+            const img = new Image();
+            img.src = `/${i}.png`; // Images should be named 1.png, 2.png, ..., 11.png
+            objectImages[i] = img;
+        }
+
+        // Level data
+        let objects = [];
+
+        // Render level based on .f2l input
+        function renderLevel() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            objects = parseLevelData(levelDataTextbox.value);
+
+            objects.forEach(obj => {
+                const img = objectImages[obj.objectID];
+                if (img) {
+                    ctx.drawImage(img, obj.x, obj.y, 128, 128);
+                }
+            });
+        }
+
+        // Parse .f2l data to create objects
+        function parseLevelData(data) {
+            const objects = [];
+            const parts = data.split(','); // Split data by commas
+            
+            let index = 0;
+
+            // Parse general level info (version, name, description, etc.)
+            const version = parts[index++];
+            const name = parts[index++];
+            const description = parts[index++];
+            const creatorName = parts[index++];
+            const playerStartX = parseInt(parts[index++]);
+            const playerStartY = parseInt(parts[index++]);
+
+            // Parse objects
+            while (index < parts.length) {
+                const objectID = parseInt(parts[index++]);
+                const x = parseInt(parts[index++]);
+                const y = parseInt(parts[index++]);
+
+                objects.push({
+                    objectID,
+                    x,
+                    y
+                });
+            }
+
+            return objects;
+        }
+
+        // To allow scrolling: make sure the canvas is bigger than the screen
+        canvas.width = 1280;
+        canvas.height = 720;
+        
+    </script>
+</body>
+</html>
