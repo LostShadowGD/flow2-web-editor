@@ -38,6 +38,8 @@
             <h3>Level Data (.f2l)</h3>
             <textarea id="levelData" placeholder="Enter level data here in .f2l format"></textarea>
             <button onclick="renderLevel()">Render Level</button>
+            <textarea id="widthbox" placeholder="width"></textarea>
+            <textarea id="heightbox" placeholder="height"></textarea>
         </div>
         <div id="canvas-container">
             <canvas id="canvas" width=auto height=auto></canvas>
@@ -48,6 +50,8 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const levelDataTextbox = document.getElementById('levelData');
+        const levelwidth = document.getElementById('widthbox');
+        const levelheight = document.getElementById('heightbox');
         const objectImages = {}; // Object ID to image mapping
 
         // Preload object images
@@ -105,8 +109,8 @@
         }
 
         // To allow scrolling: make sure the canvas is bigger than the screen
-        canvas.width = 1280;
-        canvas.height = 720;
+        canvas.width = levelwidth;
+        canvas.height = levelheight;
         
     </script>
 </body>
